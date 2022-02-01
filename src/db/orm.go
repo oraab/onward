@@ -9,7 +9,13 @@ import (
 	"strings"
 )
 
+type Task struct {
+	Id int
+	Description string
+}
+
 type OnwardDb struct {
+	nextId int
 	db *gorm.DB
 }
 
@@ -22,10 +28,14 @@ func NewOnwardDb(dbLocation string) (*OnwardDb, error) {
 	if err != nil {
 		return &OnwardDb{}, errors.New(fmt.Sprintf("Failed to open DB %v: %v",dbLocation, err))
 	}
-	return &OnwardDb{db: db}, nil
+	db.AutoMigrate(&Task{})
+	return &OnwardDb{db: db, nextId: 0}, nil
 }
 
-
+func (o *OnwardDb) Insert(description string) {
+	o.nextId++
+	o.db.Create(&Task{Id: o.nextId, Description: description})
+}
 
 func sanitizeInput(dbLocation string) error {
 	var sanitizeResults error

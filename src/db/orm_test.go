@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"reflect"
 	"strings"
 	"testing"
@@ -45,6 +46,22 @@ func TestNewOnwardDbCreation(t *testing.T) {
 	}
 	if fmt.Sprintf("%v",reflect.TypeOf(db.db)) != "*gorm.DB" {
 		t.Errorf("Expected type of received DB to be gorm.DB but received %v",reflect.TypeOf(db.db))
+	}
+}
+
+func TestInsert(t *testing.T) {
+	db, err := NewOnwardDb(getDbLocation())
+	if err != nil {
+		t.Errorf("Received unexpected error when trying to create DB to run insert query: %v", err)
+	}
+	db.Insert("TestInsert")
+	cmd := exec.Command("sqlite3", fmt.Sprintf(" %v \"select count(1) from tasks;\"",getDbLocation()))
+	res, err := cmd.Output()
+	if err != nil {
+		t.Errorf("Received error when trying to run external sqlite3 command: %v", err)
+	}
+	if string(res) != "1" {
+		t.Errorf("Result %v is not expected result 1",string(res))
 	}
 }
 
