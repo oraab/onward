@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/driver/sqlite"
 	"github.com/hashicorp/go-multierror"
+	"gorm.io/gorm/clause"
 	"strings"
 )
 
@@ -32,9 +33,24 @@ func NewOnwardDb(dbLocation string) (*OnwardDb, error) {
 	return &OnwardDb{db: db, nextId: 0}, nil
 }
 
-func (o *OnwardDb) Insert(description string) {
+func (o *OnwardDb) Select(queryParams map[string]string) []Task {
+	tasks := make([]Task,0)
+	formattedQuery := prepareQuery(queryParams)
+	o.db.Where(formattedQuery[0],formattedQuery[1:]).Find(&tasks)
+	return tasks
+}
+
+func (o *OnwardDb) Insert(description string) error {
+	db, err := o.db.DB()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 	o.nextId++
-	o.db.Create(&Task{Id: o.nextId, Description: description})
+	o.db.Clauses(clause.OnConflict{
+		UpdateAll:    true,
+	}).Create(&Task{Id: o.nextId, Description: description})
+	return nil
 }
 
 func sanitizeInput(dbLocation string) error {
@@ -59,6 +75,21 @@ func sanitizeInput(dbLocation string) error {
 		}
 	}
 	return sanitizeResults
+}
+
+func prepareQuery(queryParams map[string]string) []string {
+	query := make([]string,0)
+	output := make([]string,0)
+	queryString := ""
+	for k,v := range queryParams {
+		query = append(query, fmt.Sprintf("%v = ?",k))
+		output = append(output,v)
+	}
+	if len(query) > 1 {
+		queryString = strings.Join(query," AND ")
+	}
+	finalOutput := []string{queryString}
+	return append(finalOutput, output...)
 }
 
 

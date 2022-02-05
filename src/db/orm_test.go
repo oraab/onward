@@ -52,13 +52,13 @@ func TestNewOnwardDbCreation(t *testing.T) {
 func TestInsert(t *testing.T) {
 	db, err := NewOnwardDb(getDbLocation())
 	if err != nil {
-		t.Errorf("Received unexpected error when trying to create DB to run insert query: %v", err)
+		t.Errorf("received unexpected error when trying to create DB to run insert query: %v", err)
 	}
 	db.Insert("TestInsert")
-	cmd := exec.Command("sqlite3", fmt.Sprintf(" %v \"select count(1) from tasks;\"",getDbLocation()))
-	res, err := cmd.Output()
+	cmd := exec.Command("sqlite3", fmt.Sprintf(" %v",getDbLocation()), " \"select count(1) from tasks;\"")
+	res, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Errorf("Received error when trying to run external sqlite3 command: %v", err)
+		t.Errorf("Received error when trying to run external sqlite3 command: %v; cmd: %v; res: %v", err, cmd, res)
 	}
 	if string(res) != "1" {
 		t.Errorf("Result %v is not expected result 1",string(res))
