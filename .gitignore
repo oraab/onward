@@ -1,3 +1,4 @@
 test/db/onwardTest.db
 /.idea
 src/manager/manager
+rust_version/onward/target
